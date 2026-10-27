@@ -312,7 +312,7 @@ public class LauncherActivity extends Activity {
 		// teclas usadas pelos botões da tela
 		c.append("bind F5 \"+attack\"\nbind F6 \"+jump\"\nbind F7 \"+duck\"\n");
 		c.append("bind r \"+reload\"\nbind e \"+use\"\nbind TAB \"+showscores\"\nbind b \"buy\"\n");
-		c.append("bind w \"+forward\"\nbind a \"+moveleft\"\nbind s \"+moveback\"\nbind d \"+moveright\"\n");
+		c.append("bind w \"+forward\"\nbind a \"+moveleft\"\nbind s \"+back\"\nbind d \"+moveright\"\n");
 		for (int k = 1; k <= 5; k++) c.append("bind ").append(k).append(" \"slot").append(k).append("\"\n");
 		c.append("fps_max ").append(fps).append("\n");
 		float scale = sens / 10f;
