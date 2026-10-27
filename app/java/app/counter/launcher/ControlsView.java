@@ -108,7 +108,14 @@ public class ControlsView extends View {
 	public void setListener(Listener l) { listener = l; }
 	public void setBuyZone(boolean b) { if (buyZone != b) { buyZone = b; postInvalidate(); } }
 	public void setControlsOn(boolean b) { controlsOn = b; if (!b) releaseAll(); postInvalidate(); }
-	public void setEditMode(boolean b) { editMode = b; if (b) releaseAll(); selected = null; postInvalidate(); }
+	public void setEditMode(boolean b) {
+		editMode = b;
+		if (b) releaseAll();
+		claimed.clear();
+		sdlPtrs.clear();
+		selected = null;
+		postInvalidate();
+	}
 	public boolean isEditMode() { return editMode; }
 
 	private void load() {

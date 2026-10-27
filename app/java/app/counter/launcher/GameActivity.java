@@ -3,6 +3,7 @@ package app.counter.launcher;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -54,16 +55,26 @@ public class GameActivity extends XashActivity {
 		mLayout.addView(controls, new ViewGroup.LayoutParams(
 				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-		// Todos os toques passam por aqui: dedos nos nossos botões ficam com a gente, o resto vai para o jogo.
-		final View.OnTouchListener sdlListener = (View.OnTouchListener) mSurface;
-		mSurface.setOnTouchListener((v, e) -> {
-			try {
-				return controls.surfaceTouch(v, e, sdlListener);
-			} catch (RuntimeException ex) {
-				// se algo der errado nos nossos controles, o jogo ainda recebe o toque normal
-				return sdlListener.onTouch(v, e);
-			}
-		});
+	}
+
+	/**
+	 * Intercepta todos os toques antes da hierarquia de views. (O SDL registra o próprio ouvinte de toque
+	 * a cada retomada do jogo, então um ouvinte nosso na surface seria apagado.)
+	 * Dedos nos nossos botões ficam com o app; os demais vão ao SDL (câmera e menus).
+	 */
+	@Override
+	public boolean dispatchTouchEvent(MotionEvent ev) {
+		if (controls == null || mSurface == null || controls.isEditMode()) return super.dispatchTouchEvent(ev);
+		int[] loc = new int[2];
+		mSurface.getLocationInWindow(loc);
+		ev.offsetLocation(-loc[0], -loc[1]);
+		try {
+			return controls.surfaceTouch(mSurface, ev, (View.OnTouchListener) mSurface);
+		} catch (RuntimeException ex) {
+			return super.dispatchTouchEvent(ev);
+		} finally {
+			ev.offsetLocation(loc[0], loc[1]);
+		}
 	}
 
 	@Override
