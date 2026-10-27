@@ -54,7 +54,13 @@ jobs:
           rm -rf cs16-apk && mkdir cs16-apk && unzip -q "$APK" 'lib/*' 'assets/*' -d cs16-apk
           mkdir -p engine/android/app/src/main/jniLibs engine/android/app/src/main/assets
           cp -r cs16-apk/lib/* engine/android/app/src/main/jniLibs/
-          cp -r cs16-apk/assets/* engine/android/app/src/main/assets/ || true
+          # o APK do CS já traz cópia dos arquivos extras do Xash; não repetir os que o motor já tem
+          (cd cs16-apk/assets && find . -type f) | while read -r f; do
+            if [ ! -e "engine/3rdparty/extras/xash-extras/$f" ]; then
+              mkdir -p "engine/android/app/src/main/assets/$(dirname "$f")"
+              cp "cs16-apk/assets/$f" "engine/android/app/src/main/assets/$f"
+            fi
+          done
           find engine/android/app/src/main/jniLibs -name '*.so' | sort
 
       - name: Compilar o Counter-A-Launcher
