@@ -3,6 +3,7 @@ package app.counter.launcher;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.view.ViewGroup;
 
 import org.libsdl.app.SDLActivity;
@@ -30,6 +31,8 @@ public class GameActivity extends XashActivity {
 	protected String[] getArguments() {
 		// A biblioteca do CS grava aqui quando o jogador entra/sai da zona de compra.
 		nativeSetenv("COUNTER_STATE_DIR", getFilesDir().getAbsolutePath());
+		// desliga os botões de toque do Xash/CS (usamos os nossos)
+		nativeSetenv("COUNTER_NO_TOUCH_BUTTONS", "1");
 		return super.getArguments();
 	}
 
@@ -50,6 +53,10 @@ public class GameActivity extends XashActivity {
 		controls.setControlsOn(!getIntent().getBooleanExtra("menu_mode", false));
 		mLayout.addView(controls, new ViewGroup.LayoutParams(
 				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+		// Todos os toques passam por aqui: dedos nos nossos botões ficam com a gente, o resto vai para o jogo.
+		final View.OnTouchListener sdlListener = (View.OnTouchListener) mSurface;
+		mSurface.setOnTouchListener((v, e) -> controls.surfaceTouch(v, e, sdlListener));
 	}
 
 	@Override

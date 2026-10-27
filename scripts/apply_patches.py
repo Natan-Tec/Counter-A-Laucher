@@ -34,6 +34,15 @@ dst.mkdir(parents=True, exist_ok=True)
 for f in (app / "java/app/counter/launcher").glob("*.java"):
     shutil.copyfile(f, dst / f.name)
 
+touch = engine / "engine/client/input/in_touch.c"
+sub(touch, '#include "mobility_int.h"', '#include "mobility_int.h"\n#include <stdlib.h>')
+sub(touch, "static qboolean Touch_IsVisible( touch_button_t *button )\n{",
+    "static qboolean Touch_IsVisible( touch_button_t *button )\n{\n"
+    "\t// Counter-A-Launcher: botões de toque do motor desligados (o app desenha os dele)\n"
+    "\tstatic int noButtons = -1;\n"
+    "\tif( noButtons < 0 ) noButtons = getenv( \"COUNTER_NO_TOUCH_BUTTONS\" ) != NULL;\n"
+    "\tif( noButtons ) return false;\n")
+
 # ---- cs16-client (bibliotecas do jogo) ----
 cg = cs16 / "android/app/build.gradle"
 sub(cg, 'abiFilters "armeabi-v7a", "arm64-v8a", "x86"', 'abiFilters "armeabi-v7a", "arm64-v8a"')

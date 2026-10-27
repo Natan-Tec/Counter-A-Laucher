@@ -280,7 +280,7 @@ public class ControlsView extends View {
 
 	@Override
 	public boolean onTouchEvent(MotionEvent e) {
-		return editMode ? editTouch(e) : playTouch(e);
+		return editMode && editTouch(e);
 	}
 
 	private boolean editTouch(MotionEvent e) {
@@ -331,51 +331,116 @@ public class ControlsView extends View {
 		if (listener != null) listener.onEditDone(); else setEditMode(false);
 	}
 
-	private boolean playTouch(MotionEvent e) {
-		int action = e.getActionMasked();
-		int idx = e.getActionIndex();
-		switch (action) {
-			case MotionEvent.ACTION_DOWN:
-			case MotionEvent.ACTION_POINTER_DOWN: {
-				int id = e.getPointerId(idx);
-				float x = e.getX(idx), y = e.getY(idx);
-				if (gearRect.contains(x, y)) { gearPointer = id; setEditMode(true); return true; }
-				if (eyeRect.contains(x, y)) { setControlsOn(!controlsOn); return true; }
-				Ctl c = hit(x, y);
-				if (c == null) return false; // deixa o jogo tratar (olhar / menus)
-				c.pointer = id;
-				if (c.isStick()) stickMove(c, x, y); else key(c.key, true);
-				invalidate();
-				return true;
-			}
-			case MotionEvent.ACTION_MOVE: {
-				boolean used = false;
-				for (Ctl c : ctls) {
-					if (c.pointer == -1 || !c.isStick()) continue;
-					int i = e.findPointerIndex(c.pointer);
-					if (i >= 0) { stickMove(c, e.getX(i), e.getY(i)); used = true; }
-				}
-				if (used) invalidate();
-				return used;
-			}
-			case MotionEvent.ACTION_UP:
-			case MotionEvent.ACTION_POINTER_UP:
-			case MotionEvent.ACTION_CANCEL: {
-				int id = e.getPointerId(idx);
-				boolean used = false;
-				for (Ctl c : ctls) {
-					if (c.pointer != id) continue;
-					if (c.isStick()) stickUpdate(0, 0); else key(c.key, false);
-					c.pointer = -1;
-					used = true;
-				}
-				if (action == MotionEvent.ACTION_CANCEL) releaseAll();
-				invalidate();
-				return used;
-			}
-			default:
-				return false;
+	// Pointers (dedos) que estão em controles nossos; os demais vão para o jogo (câmera/menus).
+	private final java.util.HashSet<Integer> claimed = new java.util.HashSet<>();
+	private final java.util.ArrayList<Integer> sdlPtrs = new java.util.ArrayList<>();
+
+	private boolean claimDown(int id, float x, float y) {
+		if (gearRect.contains(x, y)) { setEditMode(true); return true; }
+		if (eyeRect.contains(x, y)) { setControlsOn(!controlsOn); return true; }
+		Ctl c = hit(x, y);
+		if (c == null) return false;
+		c.pointer = id;
+		if (c.isStick()) stickMove(c, x, y); else key(c.key, true);
+		invalidate();
+		return true;
+	}
+
+	private void releasePointer(int id) {
+		for (Ctl c : ctls) {
+			if (c.pointer != id) continue;
+			if (c.isStick()) stickUpdate(0, 0); else key(c.key, false);
+			c.pointer = -1;
 		}
+		invalidate();
+	}
+
+	/**
+	 * Recebe TODOS os toques da tela do jogo. Os dedos que caem em nossos botões são tratados aqui;
+	 * os outros são repassados ao SDL como um evento só com esses dedos (câmera e menus continuam
+	 * funcionando ao mesmo tempo que o joystick).
+	 */
+	public boolean surfaceTouch(View v, MotionEvent e, View.OnTouchListener sdl) {
+		if (editMode) return true;
+		int act = e.getActionMasked(), ai = e.getActionIndex();
+		int actId = e.getPointerId(ai);
+		boolean actClaimed = false;
+
+		if (act == MotionEvent.ACTION_DOWN || act == MotionEvent.ACTION_POINTER_DOWN) {
+			if (claimDown(actId, e.getX(ai), e.getY(ai))) { claimed.add(actId); actClaimed = true; }
+		} else if (act == MotionEvent.ACTION_MOVE) {
+			boolean any = false;
+			for (Ctl c : ctls) {
+				if (c.pointer == -1 || !c.isStick()) continue;
+				int i = e.findPointerIndex(c.pointer);
+				if (i >= 0) { stickMove(c, e.getX(i), e.getY(i)); any = true; }
+			}
+			if (any) invalidate();
+		} else if (act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_POINTER_UP) {
+			actClaimed = claimed.contains(actId);
+		}
+
+		// dedos que vão para o jogo
+		java.util.ArrayList<Integer> idxs = new java.util.ArrayList<>();
+		for (int i = 0; i < e.getPointerCount(); i++) {
+			int id = e.getPointerId(i);
+			if (!claimed.contains(id)) idxs.add(i);
+		}
+		if (act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_POINTER_UP || act == MotionEvent.ACTION_CANCEL) {
+			// libera depois de montar a lista
+		}
+
+		boolean result;
+		if (act == MotionEvent.ACTION_CANCEL) {
+			releaseAll();
+			claimed.clear();
+			sdlPtrs.clear();
+			result = sdl.onTouch(v, e);
+			return result;
+		}
+
+		int newAction = MotionEvent.ACTION_MOVE;
+		int newIndex = -1;
+		boolean add = false, remove = false;
+		if (!actClaimed && (act == MotionEvent.ACTION_DOWN || act == MotionEvent.ACTION_POINTER_DOWN)) {
+			newIndex = idxs.indexOf(ai);
+			add = true;
+			newAction = sdlPtrs.isEmpty() ? MotionEvent.ACTION_DOWN
+					: (MotionEvent.ACTION_POINTER_DOWN | (newIndex << MotionEvent.ACTION_POINTER_INDEX_SHIFT));
+		} else if (!actClaimed && (act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_POINTER_UP)) {
+			newIndex = idxs.indexOf(ai);
+			remove = true;
+			newAction = sdlPtrs.size() <= 1 ? MotionEvent.ACTION_UP
+					: (MotionEvent.ACTION_POINTER_UP | (newIndex << MotionEvent.ACTION_POINTER_INDEX_SHIFT));
+		}
+
+		if (act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_POINTER_UP) {
+			if (actClaimed) { claimed.remove(actId); releasePointer(actId); }
+		}
+
+		// nada para o jogo neste evento (o dedo que mudou é nosso e não há outros), ou evento de dedo nosso
+		if (idxs.isEmpty() || (newIndex < 0 && (add || remove))) {
+			if (remove) sdlPtrs.remove(Integer.valueOf(actId));
+			return true;
+		}
+		if (actClaimed && sdlPtrs.isEmpty()) return true;
+
+		MotionEvent.PointerProperties[] props = new MotionEvent.PointerProperties[idxs.size()];
+		MotionEvent.PointerCoords[] coords = new MotionEvent.PointerCoords[idxs.size()];
+		for (int k = 0; k < idxs.size(); k++) {
+			props[k] = new MotionEvent.PointerProperties();
+			coords[k] = new MotionEvent.PointerCoords();
+			e.getPointerProperties(idxs.get(k), props[k]);
+			e.getPointerCoords(idxs.get(k), coords[k]);
+		}
+		MotionEvent ne = MotionEvent.obtain(e.getDownTime(), e.getEventTime(), newAction, idxs.size(), props, coords,
+				e.getMetaState(), e.getButtonState(), e.getXPrecision(), e.getYPrecision(), e.getDeviceId(),
+				e.getEdgeFlags(), e.getSource(), e.getFlags());
+		result = sdl.onTouch(v, ne);
+		ne.recycle();
+		if (add) sdlPtrs.add(actId);
+		if (remove) sdlPtrs.remove(Integer.valueOf(actId));
+		return result;
 	}
 
 	private void stickMove(Ctl c, float x, float y) {
