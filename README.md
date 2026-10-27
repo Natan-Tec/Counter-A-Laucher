@@ -7,7 +7,7 @@ Os arquivos do jogo (pastas `valve` e `cstrike`) **não** vêm no app: você apo
 ## O que tem
 - Tela inicial: escolher pasta, modo (partida rápida com bots ou menu do jogo), mapa, bots, qualidade, FPS, sensibilidade.
 - Joystick sempre visível; arrastar a tela livre para mirar; menus do jogo (CT/TR, compra) tocáveis.
-- Botões: fogo, pular, agachar, recarregar, usar, TAB, MENU e armas 1–5 (as teclas 1–5 também escolhem opções dos menus do CS).
+- Botões: fogo, pular, agachar, recarregar, usar, TAB, TIME (trocar de time), MENU e armas 1–5 (as teclas 1–5 também escolhem opções dos menus do CS).
 - Botão **COMPRAR** só aparece dentro da zona de compra.
 - **Editar botões**: mover, mudar tamanho e transparência (pela tela inicial ou pelo botão EDIT dentro do jogo).
 

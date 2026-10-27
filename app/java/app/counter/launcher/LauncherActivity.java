@@ -318,9 +318,20 @@ public class LauncherActivity extends Activity {
 		float scale = sens / 10f;
 		c.append("touch_pitch ").append(Math.round(90 * scale)).append("\n");
 		c.append("touch_yaw ").append(Math.round(120 * scale)).append("\n");
-		// tira os botões padrão do Xash (usamos os nossos)
-		c.append("touch_removebutton *\n");
+		c.append("bind F8 \"chooseteam\"\n");
 		if (bots) c.append("yb_quota ").append(nbots).append("\n");
 		try (FileWriter w = new FileWriter(f, false)) { w.write(c.toString()); }
+
+		// touch.cfg vazio: sem ele o Xash/CS carregam os botões deles por baixo dos nossos
+		// e eles roubam o toque da câmera. Guardamos uma cópia do arquivo antigo uma vez.
+		File touch = new File(f.getParentFile(), "touch.cfg");
+		File backup = new File(f.getParentFile(), "touch.cfg.antigo");
+		if (touch.exists() && !backup.exists()) {
+			String old = new String(java.nio.file.Files.readAllBytes(touch.toPath()));
+			if (!old.contains("Counter-A-Launcher")) touch.renameTo(backup);
+		}
+		try (FileWriter w = new FileWriter(touch, false)) {
+			w.write("// Counter-A-Launcher: sem botoes do Xash (os botoes sao do proprio app)\n");
+		}
 	}
 }

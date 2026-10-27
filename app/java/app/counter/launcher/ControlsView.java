@@ -91,6 +91,7 @@ public class ControlsView extends View {
 		ctls.add(new Ctl("scores", "TAB", KeyEvent.KEYCODE_TAB, 0.93f, 0.25f, 0.12f));
 		ctls.add(new Ctl("buy", "COMPRAR", KeyEvent.KEYCODE_B, 0.62f, 0.78f, 0.15f));
 		ctls.add(new Ctl("esc", "MENU", KeyEvent.KEYCODE_ESCAPE, 0.95f, 0.08f, 0.11f));
+		ctls.add(new Ctl("team", "TIME", KeyEvent.KEYCODE_F8, 0.86f, 0.08f, 0.11f));
 		for (int i = 0; i < 5; i++) {
 			ctls.add(new Ctl("slot" + (i + 1), String.valueOf(i + 1), KeyEvent.KEYCODE_1 + i,
 					0.40f + 0.06f * i, 0.09f, 0.11f));
