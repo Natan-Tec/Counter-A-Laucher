@@ -1,6 +1,6 @@
 # Counter-A-Launcher
 
-CS 1.6 simples para Android (feito para o Galaxy A11): abre, escolhe a pasta do jogo e joga.
+CS 1.6 simples para Android: abre, escolhe a pasta do jogo e joga.
 Base: motor [Xash3D FWGS](https://github.com/FWGS/xash3d-fwgs) + bibliotecas do CS de [Velaron/cs16-client](https://github.com/Velaron/cs16-client).
 Os arquivos do jogo (pastas `valve` e `cstrike`) **não** vêm no app: você aponta a pasta onde eles estão.
 
