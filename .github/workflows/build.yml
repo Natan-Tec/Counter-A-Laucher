@@ -1,0 +1,72 @@
+name: Gerar APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+env:
+  # Versões fixas para o build não quebrar quando os projetos originais mudarem
+  ENGINE_SHA: 27092af50d912432887faa43a1cccddfae569b2d   # FWGS/xash3d-fwgs
+  CS16_SHA: a238ef131803ed7592c4ba701499027c862889ee      # Velaron/cs16-client
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Instalar dependências
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build ccache python3
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+
+      - name: Baixar Xash3D FWGS (motor)
+        run: |
+          git clone --filter=blob:none https://github.com/FWGS/xash3d-fwgs.git engine
+          git -C engine checkout "$ENGINE_SHA"
+          git -C engine submodule update --init --recursive --jobs 4
+
+      - name: Baixar cs16-client (bibliotecas do CS 1.6)
+        run: |
+          git clone --filter=blob:none https://github.com/Velaron/cs16-client.git cs16
+          git -C cs16 checkout "$CS16_SHA"
+          git -C cs16 submodule update --init --recursive --jobs 4
+
+      - name: Aplicar nossas modificações
+        run: python3 scripts/apply_patches.py engine cs16
+
+      - name: Compilar bibliotecas do CS 1.6
+        working-directory: cs16/android
+        run: ./gradlew --no-daemon assembleGitContinuous
+
+      - name: Juntar bibliotecas do CS no app do motor
+        run: |
+          APK=$(find cs16/android/app/build/outputs/apk -name '*.apk' | head -n1)
+          echo "APK do CS: $APK"
+          rm -rf cs16-apk && mkdir cs16-apk && unzip -q "$APK" 'lib/*' 'assets/*' -d cs16-apk
+          mkdir -p engine/android/app/src/main/jniLibs engine/android/app/src/main/assets
+          cp -r cs16-apk/lib/* engine/android/app/src/main/jniLibs/
+          cp -r cs16-apk/assets/* engine/android/app/src/main/assets/ || true
+          find engine/android/app/src/main/jniLibs -name '*.so' | sort
+
+      - name: Compilar o Counter-A-Launcher
+        working-directory: engine/android
+        run: ./gradlew --no-daemon assembleContinuous
+
+      - name: Separar APK
+        run: |
+          APK=$(find engine/android/app/build/outputs/apk -name '*.apk' | head -n1)
+          mkdir -p out && cp "$APK" out/Counter-A-Launcher.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Counter-A-Launcher
+          path: out/Counter-A-Launcher.apk
