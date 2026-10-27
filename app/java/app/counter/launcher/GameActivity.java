@@ -56,7 +56,14 @@ public class GameActivity extends XashActivity {
 
 		// Todos os toques passam por aqui: dedos nos nossos botões ficam com a gente, o resto vai para o jogo.
 		final View.OnTouchListener sdlListener = (View.OnTouchListener) mSurface;
-		mSurface.setOnTouchListener((v, e) -> controls.surfaceTouch(v, e, sdlListener));
+		mSurface.setOnTouchListener((v, e) -> {
+			try {
+				return controls.surfaceTouch(v, e, sdlListener);
+			} catch (RuntimeException ex) {
+				// se algo der errado nos nossos controles, o jogo ainda recebe o toque normal
+				return sdlListener.onTouch(v, e);
+			}
+		});
 	}
 
 	@Override

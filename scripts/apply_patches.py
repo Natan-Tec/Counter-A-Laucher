@@ -41,7 +41,12 @@ sub(touch, "static qboolean Touch_IsVisible( touch_button_t *button )\n{",
     "\t// Counter-A-Launcher: botões de toque do motor desligados (o app desenha os dele)\n"
     "\tstatic int noButtons = -1;\n"
     "\tif( noButtons < 0 ) noButtons = getenv( \"COUNTER_NO_TOUCH_BUTTONS\" ) != NULL;\n"
-    "\tif( noButtons ) return false;\n")
+    "\tif( noButtons && button->type != touch_look ) return false;\n")
+# a área de olhar (botão invisível _look) passa a ocupar a tela toda; o app tira do caminho os dedos que caem nos botões dele
+sub(touch, "Q_strncpy( b->name, name, sizeof( b->name ));\n\tb->x1 = x1;",
+    "Q_strncpy( b->name, name, sizeof( b->name ));\n"
+    "\tif( !Q_strcmp( command, \"_look\" )) { x1 = 0.0f; y1 = 0.0f; x2 = 1.0f; y2 = 1.0f; } // Counter-A-Launcher\n"
+    "\tb->x1 = x1;")
 
 # ---- cs16-client (bibliotecas do jogo) ----
 cg = cs16 / "android/app/build.gradle"
