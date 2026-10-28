@@ -7,6 +7,7 @@ Os arquivos do jogo (pastas `valve` e `cstrike`) **não** vêm no app: você apo
 ## O que tem
 - Tela inicial: escolher pasta, modo (partida rápida com bots ou menu do jogo), mapa, bots, qualidade, FPS, sensibilidade.
 - Joystick sempre visível; arrastar a tela livre para mirar; menus do jogo (CT/TR, compra) tocáveis.
+- Botão MIRA = clique direito do mouse (zoom da AWP/Scout, silenciador, etc.).
 - Botões: fogo, pular, agachar, recarregar, usar, TAB, TIME (trocar de time), MENU e armas 1–5 (as teclas 1–5 também escolhem opções dos menus do CS).
 - Botão **COMPRAR** só aparece dentro da zona de compra.
 - **Editar botões**: mover, mudar tamanho e transparência (pela tela inicial ou pelo botão EDIT dentro do jogo).
@@ -23,3 +24,6 @@ Os arquivos do jogo (pastas `valve` e `cstrike`) **não** vêm no app: você apo
 ## Observações
 - Fixa versões do Xash3D FWGS e cs16-client em `.github/workflows/build.yml` para o build não quebrar.
 - Nenhuma parte foi compilada nem testada em aparelho ainda; o primeiro build pode precisar de ajustes.
+
+## Atualizações
+Ao abrir, o app consulta a última Release do GitHub. Se houver build mais novo, mostra um aviso, manda uma notificação e o botão "Baixar e instalar" baixa o APK e abre o instalador (o Android pede, uma vez, permissão para instalar apps vindos deste app).

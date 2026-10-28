@@ -1,7 +1,11 @@
 package app.counter.launcher;
 
 import android.app.Activity;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
@@ -44,12 +48,18 @@ public class LauncherActivity extends Activity {
 	private Spinner mapSpin, qualitySpin, fpsSpin;
 	private SeekBar sensBar, botsBar;
 	private TextView sensLabel, botsLabel;
+	private TextView updateText;
+	private Button updateBtn;
+	private Updater.Info updateInfo;
+	private long downloadId = -1;
+	private BroadcastReceiver downloadReceiver;
 
 	@Override
 	protected void onCreate(Bundle b) {
 		super.onCreate(b);
 		sp = getSharedPreferences("launcher", MODE_PRIVATE);
 		buildUi();
+		startUpdateCheck();
 	}
 
 	@Override
@@ -99,6 +109,14 @@ public class LauncherActivity extends Activity {
 		TextView title = label("Counter-A-Launcher", 26, true);
 		title.setGravity(Gravity.CENTER);
 		root.addView(title);
+
+		updateText = label("", 15, true);
+		updateText.setTextColor(0xFF81C784);
+		updateText.setVisibility(View.GONE);
+		root.addView(updateText);
+		updateBtn = button("Baixar e instalar", 0xFF1565C0, v -> startDownload());
+		updateBtn.setVisibility(View.GONE);
+		root.addView(updateBtn);
 
 		permText = label("", 14, false);
 		root.addView(permText);
@@ -256,6 +274,51 @@ public class LauncherActivity extends Activity {
 		msg.setText("");
 	}
 
+	// ---- atualização ----
+
+	private void startUpdateCheck() {
+		if (Build.VERSION.SDK_INT >= 33) {
+			requestPermissions(new String[] { "android.permission.POST_NOTIFICATIONS" }, 3);
+		}
+		Updater.check(this, info -> {
+			if (info == null || isFinishing()) return;
+			updateInfo = info;
+			updateText.setText("Nova versão disponível: build " + info.build + " (a sua é a " + Updater.currentBuild(this) + ")");
+			updateText.setVisibility(View.VISIBLE);
+			updateBtn.setVisibility(View.VISIBLE);
+			if (sp.getInt("notified_build", 0) < info.build) {
+				Updater.notifyUpdate(this, info);
+				sp.edit().putInt("notified_build", info.build).apply();
+			}
+		});
+	}
+
+	private void startDownload() {
+		if (updateInfo == null) return;
+		if (downloadReceiver == null) {
+			downloadReceiver = new BroadcastReceiver() {
+				@Override public void onReceive(Context c, Intent i) {
+					if (downloadId != -1 && i.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1) == downloadId) {
+						updateBtn.setText("Instalar atualização");
+						updateBtn.setOnClickListener(v -> Updater.install(LauncherActivity.this));
+						Updater.install(LauncherActivity.this);
+					}
+				}
+			};
+			IntentFilter f = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+			if (Build.VERSION.SDK_INT >= 33) registerReceiver(downloadReceiver, f, Context.RECEIVER_EXPORTED);
+			else registerReceiver(downloadReceiver, f);
+		}
+		downloadId = Updater.download(this, updateInfo);
+		updateBtn.setText("Baixando... (veja a barra de notificações)");
+	}
+
+	@Override
+	protected void onDestroy() {
+		if (downloadReceiver != null) unregisterReceiver(downloadReceiver);
+		super.onDestroy();
+	}
+
 	// ---- jogar ----
 
 	private void play() {
@@ -319,6 +382,7 @@ public class LauncherActivity extends Activity {
 		c.append("touch_pitch ").append(Math.round(90 * scale)).append("\n");
 		c.append("touch_yaw ").append(Math.round(120 * scale)).append("\n");
 		c.append("bind F8 \"chooseteam\"\n");
+		c.append("bind F9 \"+attack2\"\n");
 		if (bots) c.append("yb_quota ").append(nbots).append("\n");
 		try (FileWriter w = new FileWriter(f, false)) { w.write(c.toString()); }
 	}

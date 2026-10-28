@@ -44,6 +44,8 @@ jobs:
           git -C cs16 submodule update --init --recursive --jobs 4
 
       - name: Aplicar nossas modificações
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
         run: python3 scripts/apply_patches.py engine cs16
 
       - name: Compilar bibliotecas do CS 1.6

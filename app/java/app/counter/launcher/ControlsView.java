@@ -88,6 +88,7 @@ public class ControlsView extends View {
 		ctls.add(new Ctl("duck", "AGACHAR", KeyEvent.KEYCODE_F7, 0.91f, 0.85f, 0.17f));
 		ctls.add(new Ctl("reload", "RECARR.", KeyEvent.KEYCODE_R, 0.70f, 0.55f, 0.17f));
 		ctls.add(new Ctl("use", "USAR", KeyEvent.KEYCODE_E, 0.78f, 0.30f, 0.15f));
+		ctls.add(new Ctl("aim", "MIRA", KeyEvent.KEYCODE_F9, 0.64f, 0.33f, 0.15f));
 		ctls.add(new Ctl("scores", "TAB", KeyEvent.KEYCODE_TAB, 0.93f, 0.25f, 0.12f));
 		ctls.add(new Ctl("buy", "COMPRAR", KeyEvent.KEYCODE_B, 0.62f, 0.78f, 0.15f));
 		ctls.add(new Ctl("esc", "MENU", KeyEvent.KEYCODE_ESCAPE, 0.95f, 0.08f, 0.11f));

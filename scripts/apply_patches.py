@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Aplica as modificações do Counter-A-Launcher sobre o Xash3D FWGS e o cs16-client."""
+import os
 import pathlib
 import shutil
 import sys
@@ -20,6 +21,7 @@ def sub(path, old, new, all_=False):
 # ---- motor (app Android) ----
 gradle = engine / "android/app/build.gradle.kts"
 sub(gradle, 'applicationId = "su.xash.engine"', 'applicationId = "app.counter.launcher"')
+sub(gradle, 'versionName = "0.21-" + getGitHash()', 'versionName = "build-%s"' % os.environ.get("BUILD_NUMBER", "0"))
 sub(gradle, 'applicationIdSuffix = ".test"', 'applicationIdSuffix = ""', all_=True)
 sub(gradle, 'setOf("armeabi-v7a", "arm64-v8a", "x86")', 'setOf("armeabi-v7a", "arm64-v8a")')
 sub(gradle, "useLegacyPackaging = true",
@@ -33,6 +35,10 @@ dst = engine / "android/app/src/main/java/app/counter/launcher"
 dst.mkdir(parents=True, exist_ok=True)
 for f in (app / "java/app/counter/launcher").glob("*.java"):
     shutil.copyfile(f, dst / f.name)
+
+xml = engine / "android/app/src/main/res/xml"
+xml.mkdir(parents=True, exist_ok=True)
+shutil.copyfile(app / "res/xml/counter_file_paths.xml", xml / "counter_file_paths.xml")
 
 touch = engine / "engine/client/input/in_touch.c"
 sub(touch, '#include "mobility_int.h"', '#include "mobility_int.h"\n#include <stdlib.h>')
