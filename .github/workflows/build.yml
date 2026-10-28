@@ -10,6 +10,9 @@ env:
   ENGINE_SHA: 27092af50d912432887faa43a1cccddfae569b2d   # FWGS/xash3d-fwgs
   CS16_SHA: a238ef131803ed7592c4ba701499027c862889ee      # Velaron/cs16-client
 
+permissions:
+  contents: write
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -76,3 +79,12 @@ jobs:
         with:
           name: Counter-A-Launcher
           path: out/Counter-A-Launcher.apk
+
+      - name: Publicar na Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "build-${GITHUB_RUN_NUMBER}" out/Counter-A-Launcher.apk \
+            --title "Counter-A-Launcher (build ${GITHUB_RUN_NUMBER})" \
+            --notes "APK gerado do commit ${GITHUB_SHA::7}." \
+            --target "${GITHUB_SHA}" --latest
